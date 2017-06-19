@@ -2,10 +2,10 @@
 <meta charset="utf-8">
 
 <svg width="960" height="600"></svg>
+<div id="chart"></div>
 
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script>
-
 var nodes = [
   { id: "Diversity", group: 0, level: 1 },
   { id: "diversity perspect 1"   , group: 0, level: 2 },
@@ -37,6 +37,7 @@ var links = [
 var width = window.innerWidth
 var height = window.innerHeight
 var svg = d3.select('svg')
+
 svg.attr('width', width).attr('height', height)
 
 var linkForce = d3
@@ -63,10 +64,14 @@ function getRadius(node) {
                 count++
             }
         })
-        return count * 10
+        return count * 12
     } else {
         return 14
     }
+}
+
+function getId(node) {
+    return node.id
 }
 
 var linkElements = svg.append('g')
@@ -76,24 +81,50 @@ var linkElements = svg.append('g')
     .attr('stroke-width', 1)
     .attr('stroke', '#E5E5E5')
 
-var nodeElements = svg.append("g")
+var container = svg.append("g")
   .attr("class", "nodes")
-  .selectAll("circle")
+var nodeElements = container.selectAll("circle")
   .data(nodes)
   .enter().append("circle")
-    .attr("r", getRadius)
-    .attr("fill", getNodeColor)
+  .attr('r', getRadius)
+  .attr('fill', getNodeColor)
+  .on('mouseover', function(d) {
+      var id = getId
+      tooltip.text(d.id);
+      return tooltip.style("visibility", "visible")
+  })
+  .on('mousemove', function() {
+      return tooltip.style("top", (d3.event.pageY - 10) + "px")
+                    .style("left", (d3.event.pageX + 10) + "px")
+  })
+  .on('mouseout', function() {
+      return tooltip.style("visibility", "hidden")
+  })
 
-  simulation.nodes(nodes).on('tick', () => {
-    nodeElements
-      .attr('cx', function (node) { return node.x })
-      .attr('cy', function (node) { return node.y })
-    linkElements
-      .attr('x1', function (link) { return link.source.x })
-      .attr('y1', function (link) { return link.source.y })
-      .attr('x2', function (link) { return link.target.x })
-      .attr('y2', function (link) { return link.target.y })
+var tooltip = d3.select("#chart").append("div")
+    .style("position", "absolute")
+    .style("visibility", "hidden")
+    .style("display", "block")
+    .style("color", "white")
+    .style("padding", "8px")
+    .style("background-color", "#626D71")
+    .style("border-radius", "6px")
+    .style("text-align", "center")
+    .style("font-family", "monospace")
+    .style("width", "400px")
+    .text("")
+
+simulation.nodes(nodes).on('tick', () => {
+  nodeElements
+    .attr('cx', function (node) { return node.x })
+    .attr('cy', function (node) { return node.y })
+  linkElements
+    .attr('x1', function (link) { return link.source.x })
+    .attr('y1', function (link) { return link.source.y })
+    .attr('x2', function (link) { return link.target.x })
+    .attr('y2', function (link) { return link.target.y })
 })
 
 simulation.force('link').links(links)
+
 </script>
