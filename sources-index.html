@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<svg></svg>
+<div id="chart"></div>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script>
+
+// sample data, this will be factored out
+var nodes = [
+  { id: "Random", kind: "TALK", name: "asdfg", value: 1},
+  { id: "Random123", kind: "TALK", name: "qwert", value: 1},
+  { id: "Random234", kind: "BOOK", name: "zxcvb", value: 2},
+  { id: "Random345", kind: "BOOK", name: "tyuio", value: 3},
+  { id: "Random456", kind: "BOOK", name: "lkjhg", value: 1},
+  { id: "Random567", kind: "PAPER", name: "ghjkl", value: 2},
+  { id: "Random678", kind: "BLOG_POST", name: "mnbvc", value: 1},
+  { id: "Random789", kind: "PODCAST", name: "xftyu", value: 2},
+  { id: "Random890", kind: "DOCUMENTARY", name: "bhujm", value: 1},
+  { id: "Random00", kind: "TALK", name: "asdfg", value: 2},
+  { id: "Random1023", kind: "TALK", name: "qwert", value: 3},
+  { id: "Random2304", kind: "BOOK", name: "zxcvb", value: 1},
+  { id: "Random0345", kind: "BOOK", name: "tyuio", value: 2},
+  { id: "Random4506", kind: "BOOK", name: "lkjhg", value: 3},
+  { id: "Random5067", kind: "PAPER", name: "ghjkl", value: 2},
+  { id: "Random0678", kind: "BLOG_POST", name: "mnbvc", value: 1},
+  { id: "Random7890", kind: "PODCAST", name: "xftyu", value: 1},
+  { id: "Random8090", kind: "DOCUMENTARY", name: "bhujm", value: 3},
+  { id: "Random0", kind: "TALK", name: "asdfg", value: 2},
+  { id: "Random1", kind: "TALK", name: "qwert", value: 1},
+  { id: "Random2", kind: "BOOK", name: "zxcvb", value: 2},
+  { id: "Random3", kind: "BOOK", name: "tyuio", value: 1},
+  { id: "Random4", kind: "BOOK", name: "lkjhg", value: 1},
+  { id: "Random5", kind: "PAPER", name: "ghjkl", value: 1},
+  { id: "Random6", kind: "BLOG_POST", name: "mnbvc", value: 2},
+  { id: "Random7", kind: "PODCAST", name: "xftyu", value: 1},
+  { id: "Random8", kind: "DOCUMENTARY", name: "bhujm", value: 2},
+  { id: "Random888", kind: "BLOG_POST", name: "mnbvc", value: 3},
+  { id: "Random333", kind: "BLOG_POST", name: "mnbvc", value: 2},
+  { id: "Random789", kind: "PODCAST", name: "xftyu", value: 2},
+  { id: "Random890", kind: "DOCUMENTARY", name: "bhujm", value: 1},
+  { id: "Random00", kind: "TALK", name: "asdfg", value: 2},
+  { id: "Ran1023", kind: "TALK", name: "qwert", value: 1},
+  { id: "Ran5067", kind: "PAPER", name: "ghjkl", value: 1},
+  { id: "Ran0678", kind: "BLOG_POST", name: "mnbvc", value: 1},
+  { id: "Ran7890", kind: "PODCAST", name: "xftyu", value: 1},
+  { id: "Ran8090", kind: "DOCUMENTARY", name: "bhujm", value: 1},
+  { id: "Ran0", kind: "TALK", name: "asdfg", value: 1},
+  { id: "Ran1", kind: "TALK", name: "qwert", value: 1},
+  { id: "Ran2", kind: "BOOK", name: "zxcvb", value: 1},
+  { id: "Ran3", kind: "BOOK", name: "tyuio", value: 1},
+  { id: "Ran4", kind: "BOOK", name: "lkjhg", value: 1},
+  { id: "Ran5", kind: "PAPER", name: "ghjkl", value: 1},
+  { id: "Ran6", kind: "BLOG_POST", name: "mnbvc", value: 1},
+  { id: "Ran7", kind: "PODCAST", name: "xftyu", value: 1},
+  { id: "Ran8", kind: "DOCUMENTARY", name: "bhujm", value: 1},
+  { id: "Ran888", kind: "BLOG_POST", name: "mnbvc", value: 1},
+]
+
+// creating the container for the bubble graph
+var width = window.innerWidth
+var height = 600
+var container = d3.select('svg')
+    .style("width", width)
+    .style("height", height)
+    .append("g")
+    .attr("class", "nodes")
+
+// creates the bubbles and sets their styles and functionality
+var nodeElements = container.selectAll("circle")
+  .data(nodes)
+  .enter().append("circle")
+  .attr('r', getRadius)
+  .attr('fill', getColor)
+  .on('mouseover', mouseOver)
+  .on('mousemove', mouseMove)
+  .on('mouseout', mouseOut)
+
+// creates the tooltip when a bubble is hovered
+var tooltip = d3.select("#chart").append("div")
+    .style("position", "absolute")
+    .style("visibility", "hidden")
+    .style("display", "block")
+    .style("color", "white")
+    .style("padding", "8px")
+    .style("background-color", "#626D71")
+    .style("border-radius", "6px")
+    .style("text-align", "center")
+    .style("font-family", "monospace")
+    .style("width", "400px")
+    .html("")
+
+// starting positions for the nodes
+nodes.forEach(function(node) {
+    node.x = splitNum(node);
+    node.y = height;
+})
+
+function mouseOver(node) {
+    node.isHovering = true
+    tooltip.text(node.id)
+    hoverColors();
+    simulation.alphaTarget(.3)
+              .force('collide', forceCollide)
+              .restart()
+    return tooltip.style("visibility", "visible")
+}
+
+function mouseMove() {
+    return tooltip.style("top", (d3.event.pageY - 10) + "px")
+                  .style("left", (d3.event.pageX + 10) + "px")
+}
+
+function mouseOut(node) {
+    node.isHovering = false
+    resetColors();
+    simulation.alphaTarget(.3)
+              .force('collide', forceCollide)
+              .restart()
+    return tooltip.style("visibility", "hidden")
+}
+
+// returns the color of the node based on its kind
+function getColor(node) {
+    kind = node.kind;
+    if (kind === 'BLOG_POST') {
+      return '#ffb68b';
+    } else if (kind === 'LETTER') {
+      return '#ff83d4';
+    } else if (kind === 'PAPER') {
+      return '#ffd88e';
+    } else if (kind === 'PODCAST') {
+      return '#ff8b8b';
+    } else if (kind === 'DOCUMENTARY') {
+      return '#df8bff';
+    } else if (kind ==='TALK') {
+      return '#ff83d4';
+    } else if (kind === 'OTHER') {
+      return '#bfc7d9';
+    } else {
+      return '#9176fb';
+    }
+  }
+
+function getRadius(node) {
+    return node.value * 10
+}
+
+function hoverColors() {
+  nodeElements.style("fill-opacity", function(o) {
+    return o.isHovering ? 1 : 0.2;
+  });
+};
+
+function resetColors(d) {
+  d3.selectAll("circle").style("fill-opacity", 1);
+};
+
+//toggle switch largely taken from https://bl.ocks.org/ProQuestionAsker/79d0228ae7161e349770e7d553cf4c94
+var atRight = true
+
+var rect = container.append("rect")
+          .attr("x", 10)
+          .attr("y", 10)
+          .attr("rx", 22)
+          .attr("ry", 22)
+          .style("fill", "lightgray")
+          .attr("width", 64)
+          .attr("height", 40)
+          .on("click", function(){
+      if(atRight === true){
+      simulation
+        .restart()
+        .force("x", forceXSplit)
+        .force("y", forceYSplit)
+        .alphaTarget(0.2)
+        .force("collide", forceCollide)
+      setAtRight(!atRight)
+      } else {
+      simulation
+        .restart()
+        .force("x", forceX)
+        .force("y", forceY)
+        .alphaTarget(0.2)
+      setAtRight(!atRight)
+      }
+    })
+
+var circle = container.append("circle")
+        .attr("cx", 30)
+        .attr("cy", 30)
+        .attr("r", 16)
+        .style("fill", "white")
+        .on("click", function(){
+    if(atRight === true){
+    simulation
+      .restart()
+      .force("x", forceXSplit)
+      .force("y", forceYSplit)
+      .alphaTarget(0.2)
+      .force("collide", forceCollide)
+    setAtRight(!atRight)
+    } else {
+    simulation
+      .restart()
+      .force("x", forceX)
+      .force("y", forceY)
+      .alphaTarget(0.2)
+    setAtRight(!atRight)
+    }
+  })
+
+var setAtRight = function(newValue) {
+    atRight = newValue;
+    circle.transition().duration(250)
+            .attr("cx", (atRight? (30) : (54)))
+            .style("fill", "white");
+    rect.transition().duration(250)
+        .style("fill", atRight? "lightgray" : "#C06C84");
+}
+
+var res = {
+    'getValue': function() { return atRight; },
+    'setValue': setAtRight,
+    'remove': function() { circle.remove(); }
+}
+
+// forces
+
+var forceX = d3.forceX(width/2).strength(0.1)
+
+var forceY = d3.forceY(height/2).strength(0.1)
+
+var forceCollide = d3.forceCollide().radius(function(d) { return d.value * 10 + 5 }).iterations(2)
+
+var forceXSplit = d3.forceX(d => width * splitNum(d)).strength(0.1)
+
+var forceYSplit = d3.forceY(height/2).strength(0.4);
+
+// positioning of the groups when split
+function splitNum(d) {
+    if (d.kind === 'LETTER') {
+      return 0.84;
+    } else if (d.kind === 'BLOG_POST') {
+      return 0.72;
+    } else if (d.kind === 'PAPER') {
+      return 0.6;
+    } else if (d.kind === 'PODCAST') {
+      return 0.48;
+    } else if (d.kind === 'DOCUMENTARY') {
+      return 0.36;
+    } else if (d.kind ==='TALK') {
+      return 0.24;
+    } else if (d.kind === 'OTHER') {
+      return 0.96;
+    } else {
+      return 0.12;
+    }
+}
+
+// creates the forces between elements
+var simulation = d3.forceSimulation(nodes)
+    .alpha(1.5)
+    .force('charge', d3.forceManyBody().strength(-50))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('forceX', forceX)
+    .force('forceY', forceY)
+    .force('collide', forceCollide)
+
+simulation.nodes(nodes).on('tick', ticked)
+
+function ticked() {
+  nodeElements
+      .attr('cx', function (node) { return node.x })
+      .attr('cy', function (node) { return node.y })
+}
+
+simulation.force('link')
+
+</script>
