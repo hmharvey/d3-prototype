@@ -6,101 +6,66 @@
 
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script>
+
+var PERSPECT_LINK = 20;
+
+// original data, this will be factored out
 var nodes = [
-  { id: "Diversity", group: 0, level: 1 },
-  { id: "diversity perspect 1"   , group: 0, level: 2 },
-  { id: "diversity perspect 2"   , group: 0, level: 2 },
-  // { id: "diversity source"   , group: 0, level: 3 },
-  { id: "Workplace Ethics"   , group: 1, level: 1 },
-  { id: "workplace perspect 1"   , group: 1, level: 2 },
-  // { id: "workplace source 1"   , group: 0, level: 3 },
-  // { id: "workplace source 2"   , group: 0, level: 3 },
-  { id: "Tech", group: 2, level: 1 },
-  { id: "tech perspect 1"   , group: 2, level: 2 },
-  { id: "tech perspect 2"   , group: 2, level: 2 },
-  { id: "Healthcare"  , group: 3, level: 1 },
-  { id: "healthcare perspect 1"  , group: 3, level: 2 },
-  { id: "healthcare perspect 2"  , group: 3, level: 2 }
+  { id: "Diversity", module: 0, level: 1, radius: 36},
+  { id: "diversity perspect 1"   , module: 0, level: 2, radius: 14 },
+  { id: "diversity perspect 2"   , module: 0, level: 2, radius: 14 },
+  // { id: "diversity source"   , module: 0, level: 3 },
+  { id: "Workplace Ethics"   , module: 1, level: 1, radius: 24 },
+  { id: "workplace perspect 1"   , module: 1, level: 2, radius: 14 },
+  // { id: "workplace source 1"   , module: 0, level: 3 },
+  // { id: "workplace source 2"   , module: 0, level: 3 },
+  { id: "Tech", module: 2, level: 1, radius: 36 },
+  { id: "tech perspect 1"   , module: 2, level: 2, radius: 14 },
+  { id: "tech perspect 2"   , module: 2, level: 2, radius: 14 },
+  { id: "Healthcare"  , module: 3, level: 1, radius: 48 },
+  { id: "healthcare perspect 1"  , module: 3, level: 2, radius: 14 },
+  { id: "healthcare perspect 2"  , module: 3, level: 2, radius: 14 },
+  { id: "healthcare perspect 3"  , module: 3, level: 2, radius: 14 }
 ]
 
-var links = [
-  { target: "Diversity", source: "diversity perspect 1" },
-  { target: "Diversity", source: "diversity perspect 2" },
+// lines connecting each topic with their perspective,
+// will be factored out
+var lines = [
+	{ target: "Diversity", source: "diversity perspect 1" },
+	{ target: "Diversity", source: "diversity perspect 2" },
   { target: "Workplace Ethics", source: "workplace perspect 1" },
   { target: "Tech", source: "tech perspect 1" },
   { target: "Tech", source: "tech perspect 2" },
   { target: "Healthcare", source: "healthcare perspect 1" },
-  { target: "Healthcare"  , source: "healthcare perspect 2" },
+  { target: "Healthcare" , source: "healthcare perspect 2" },
+  { target: "Healthcare" , source: "healthcare perspect 3" }
 ]
 
-// displaying bubbles
-var width = window.innerWidth
-var height = window.innerHeight
-var svg = d3.select('svg')
+// creating the container for the bubble graph
+var width = 960
+var height = 600
+var container = d3.select('svg')
+    .append("g")
+    .attr("class", "nodes")
 
-svg.attr('width', width).attr('height', height)
-
-var linkForce = d3
-  .forceLink()
-  .id(function (link) { return link.id })
-  .distance(function (link) { return 60 })
-
-var simulation = d3
-  .forceSimulation()
-  .force('link', linkForce)
-  .force('charge', d3.forceManyBody().strength(-20))
-  .force('center', d3.forceCenter(width / 2, height / 2))
-
-function getNodeColor(node) {
-    return node.level === 1 ? '#29f2ba' : '#5da5ef'
-}
-
-function getRadius(node) {
-    if (node.level === 1) {
-        var group = node.group
-        var count = 0
-        nodes.forEach(function(node) {
-            if (node.group === group) {
-                count++
-            }
-        })
-        return count * 12
-    } else {
-        return 14
-    }
-}
-
-function getId(node) {
-    return node.id
-}
-
-var linkElements = svg.append('g')
+// creates the line elements to link the bubbles
+var lineElements = container.append('g')
   .selectAll('line')
-  .data(links)
+  .data(lines)
   .enter().append('line')
     .attr('stroke-width', 1)
     .attr('stroke', '#E5E5E5')
 
-var container = svg.append("g")
-  .attr("class", "nodes")
+// creates the bubbles and sets their styles and functionality
 var nodeElements = container.selectAll("circle")
   .data(nodes)
   .enter().append("circle")
   .attr('r', getRadius)
   .attr('fill', getNodeColor)
-  .on('mouseover', function(d) {
-      var id = getId
-      tooltip.text(d.id);
-      return tooltip.style("visibility", "visible")
-  })
-  .on('mousemove', function() {
-      return tooltip.style("top", (d3.event.pageY - 10) + "px")
-                    .style("left", (d3.event.pageX + 10) + "px")
-  })
-  .on('mouseout', function() {
-      return tooltip.style("visibility", "hidden")
-  })
+  .on('mouseover', mouseOver)
+  .on('mouseout', mouseOut)
 
+// creates the tooltip when a bubble is hovered
 var tooltip = d3.select("#chart").append("div")
     .style("position", "absolute")
     .style("visibility", "hidden")
@@ -112,19 +77,125 @@ var tooltip = d3.select("#chart").append("div")
     .style("text-align", "center")
     .style("font-family", "monospace")
     .style("width", "400px")
-    .text("")
+    .html("")
 
-simulation.nodes(nodes).on('tick', () => {
-  nodeElements
-    .attr('cx', function (node) { return node.x })
-    .attr('cy', function (node) { return node.y })
-  linkElements
-    .attr('x1', function (link) { return link.source.x })
-    .attr('y1', function (link) { return link.source.y })
-    .attr('x2', function (link) { return link.target.x })
-    .attr('y2', function (link) { return link.target.y })
+nodes.forEach(function(node) {
+    node.x = width
+    node.y = height
 })
 
-simulation.force('link').links(links)
+function mouseOver(node) {
+    node.isHovering = true
+    tooltip.text(node.id)
+    d3.select(this).attr("r", node.radius + 10)
+    hoverColors(node);
+    simulation.alphaTarget(.3)
+              .force('link', linkForce)
+              .force('collide', forceCollide)
+              .restart()
+    tooltip.style("visibility", "visible")
+           .style("top", (d3.event.pageY - 10) + "px")
+           .style("left", (d3.event.pageX + 10) + "px")
+    return tooltip.style("opacity", "1")
+}
+
+function mouseOut(node) {
+    node.isHovering = false
+    d3.select(this).attr("r", node.radius);
+    resetColors();
+    simulation.alphaTarget(.3)
+              .force('link', linkForce)
+              .force('collide', forceCollide)
+              .restart()
+
+    tooltip.on('mouseover', function(d) {
+           tooltip.transition().style("opacity", "1");
+         }).on('mouseout', function(d) {
+           tooltip.transition().duration(200).style("opacity", "0");
+         });
+    return tooltip.transition().duration(200).style("opacity", "0")
+}
+
+// creating a force between the links
+var linkForce = d3.forceLink()
+    .id(function (link) { return link.id })
+    .distance(getDistance)
+    .iterations(1)
+
+function getDistance(link) {
+  return link.source.radius + link.target.radius + PERSPECT_LINK
+}
+
+// returns the color of the node based on its level
+function getNodeColor(node) {
+    return node.level === 1 ? '#29f2ba' : '#5da5ef'
+}
+
+// returns the radius of the node based on the number
+// of children it has
+function getRadius(node) {
+    if (node.level === 1) {
+        return node.radius
+    } else {
+        return 14
+    }
+}
+
+function getModule(node) {
+  return node.module;
+}
+
+function isSameModule(hoveredCircle, otherCircle) {
+  return hoveredCircle.module == otherCircle.module;
+};
+
+function isSameLine(hoveredCircle, line) {
+  return hoveredCircle.module == line.source.module;
+};
+
+function hoverColors(d) {
+  d3.selectAll("circle").style("fill-opacity", function(o) {
+    return isSameModule(d, o) ? 1 : 0.2;
+  });
+  d3.selectAll("line").style("stroke-opacity", function(o) {
+    return isSameLine(d, o) ? 1 : 0.2;
+  });
+};
+
+function resetColors(d) {
+  d3.selectAll("circle").style("fill-opacity", 1);
+  d3.selectAll("line").style("stroke-opacity", 1);
+};
+
+var forceX = d3.forceX(250).strength(0.04)
+
+var forceY = d3.forceY(250).strength(0.04)
+
+var forceCollide = d3.forceCollide().radius(function(d) { return d.radius + 10 }).iterations(2)
+
+// creates the forces between elements
+var simulation = d3.forceSimulation(nodes)
+    .alpha(1.5)
+    .force('link', linkForce)
+    .force('charge', d3.forceManyBody().strength(-50))
+    .force('center', d3.forceCenter(width / 2, height / 2))
+    .force('forceX', forceX)
+    .force('forceY', forceY)
+    .force('collide', forceCollide)
+
+simulation.nodes(nodes).on('tick', ticked)
+
+function ticked() {
+  d3.selectAll("circle")
+      .attr('cx', function (node) { return node.x })
+      .attr('cy', function (node) { return node.y })
+  d3.selectAll("line")
+      .attr('x1', function (link) { return link.source.x })
+      .attr('y1', function (link) { return link.source.y })
+      .attr('x2', function (link) { return link.target.x })
+      .attr('y2', function (link) { return link.target.y })
+}
+
+simulation.force('link').links(lines)
 
 </script>
