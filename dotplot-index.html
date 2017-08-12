@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+<body>
+    <svg></svg>
+    <div id="chart"></div>
+    <script>
+        // sample data, this will be factored out
+        // this code is largely based on Guillaume Calmettes’s https://bl.ocks.org/gcalmettes/95e3553da26ec90fd0a2890a678f3f69
+        var data = [ { id: "Random", kind: "TALK", name: "asdfg", value: 1, },
+                     { id: "Random123", kind: "TALK", name: "qwert", value: 1},
+                     { id: "Random234", kind: "BOOK", name: "zxcvb", value: 2},
+                     { id: "Random345", kind: "BOOK", name: "tyuio", value: 3},
+                     { id: "Random456", kind: "BOOK", name: "lkjhg", value: 1},
+                     { id: "Random567", kind: "PAPER", name: "ghjkl", value: 2},
+                     { id: "Random678", kind: "BLOG_POST", name: "mnbvc", value: 1},
+                     { id: "Random789", kind: "PODCAST", name: "xftyu", value: 2},
+                     { id: "Random890", kind: "DOCUMENTARY", name: "bhujm", value: 1}, ]
+
+        // sets the dimensions of the graph
+        var margin = { top: 10, right: 30, bottom: 30, left: 30 },
+            width = window.innerWidth/2 - margin.left - margin.right,
+            height = 480 - margin.top - margin.bottom;
+
+        // sets the ranges
+        var x = d3.scaleLinear()
+            .rangeRound([0, width])
+            .domain([0, data.length]);
+        var y = d3.scaleLinear()
+            .range([height, 0])
+            .domain([0, data.length]);
+
+        // adds the svg canvas
+        var svg = d3.select("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("class", "nodes")
+            .attr("transform",
+            "translate(" + margin.left + "," + margin.top + ")");
+
+        // add x axis
+        svg.append("g")
+            .attr("class", "axis axis--x")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x));
+
+        // add y axis
+        svg.append("g")
+            .attr("class", "axis axis--y")
+            .attr("transform", "translate(0, 0)")
+            .call(d3.axisLeft(y));
+
+        // add the tooltip area to the webpage
+        var tooltip = d3.select("#chart").append("div")
+            .style("position", "absolute")
+            .style("visibility", "hidden")
+            .style("display", "block")
+            .style("color", "white")
+            .style("padding", "8px")
+            .style("background-color", "#626D71")
+            .style("border-radius", "6px")
+            .style("text-align", "center")
+            .style("font-family", "monospace")
+            .style("width", "400px")
+            .html("")
+
+        function update() {
+            var t = d3.transition()
+                .duration(1000);
+
+            // Set up the binning parameters for the histogram
+            var nbins = 500;
+            var histogram = d3.histogram()
+                .domain(x.domain())
+                .thresholds(x.ticks(nbins))
+                .value(function (d) { return splitNum(d); })
+
+            // Compute the histogram
+            var bins = histogram(data);
+
+            // radius dependent of data length
+            var radius = y(data.length - 1) / 2.2;
+
+            // bins objects
+            var binContainer = svg.selectAll("g")
+                .data(bins);
+            binContainer.enter().append("g")
+                .attr("transform", d => "translate(0, " + y(d.x0) +")");
+
+            var dots = binContainer.selectAll("circle")
+                .data(function (d) {
+                    return d.map(function (data, i) { return { "idx": i, "name": data.name, "kind": data.kind, "value": data.value }; })
+                });
+
+            dots.enter().append("circle")
+                .attr("class", "enter")
+                .attr("cx", function (d) {
+                    return x(d.idx) + radius;
+                })
+                .attr("cy", 0)
+                .attr("r", radius)
+                .attr("fill", getColor)
+                .merge(dots)
+                .on("mouseover", function (d) {
+                    d.isHovering = true
+                    hoverColors();
+                    return tooltip.html(d.name + "<br/> (" + d.idx + ")")
+                                  .style("visibility", "visible")
+                                  .style("top", (d3.event.pageY - 10) + "px")
+                                  .style("left", (d3.event.pageX + 20) + "px")
+                })
+                .on("mouseout", function (d) {
+                    d.isHovering = false
+                    resetColors();
+                    return tooltip.style("visibility", "hidden")
+                });
+
+                // returns the color of the node d based on its kind
+                function getColor(d) {
+                    kind = d.kind;
+                    if (kind === 'BLOG_POST') {
+                      return '#ffb68b';
+                    } else if (kind === 'LETTER') {
+                      return '#ff83d4';
+                    } else if (kind === 'PAPER') {
+                      return '#ffd88e';
+                    } else if (kind === 'PODCAST') {
+                      return '#ff8b8b';
+                    } else if (kind === 'DOCUMENTARY') {
+                      return '#df8bff';
+                    } else if (kind ==='TALK') {
+                      return '#ff83d4';
+                    } else if (kind === 'OTHER') {
+                      return '#bfc7d9';
+                    } else {
+                      return '#9176fb';
+                    }
+                  }
+                
+                // returns the opacity when a node d is hovered
+                function hoverColors() {
+                  dots.style("fill-opacity", function(o) {
+                    return o.isHovering ? 1 : 0.2;
+                  });
+                };
+
+                // resets the opacities to 1
+                function resetColors() {
+                  d3.selectAll("circle").style("fill-opacity", 1);
+                };
+
+                // returns the number value relating to the kind of the node d
+                function splitNum(d) {
+                    kind = d.kind;
+                    if (kind === 'LETTER') {
+                      return 1;
+                    } else if (kind === 'BLOG_POST') {
+                      return 2;
+                    } else if (kind === 'PAPER') {
+                      return 3;
+                    } else if (kind === 'PODCAST') {
+                      return 4;
+                    } else if (kind === 'DOCUMENTARY') {
+                      return 5;
+                    } else if (kind ==='TALK') {
+                      return 6;
+                    } else if (kind === 'OTHER') {
+                      return 7;
+                    } else {
+                      return 8;
+                    }
+                }
+        };
+
+        // check data and update data
+        d3.interval(function () {
+            update();
+        }, 100);
+
+  </script>
+</body>
