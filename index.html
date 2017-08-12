@@ -63,7 +63,7 @@ var nodeElements = container.selectAll("circle")
   .attr('r', getRadius)
   .attr('fill', getNodeColor)
   .on('mouseover', mouseOver)
-  .on('mousemove', mouseMove)
+//   .on('mousemove', mouseMove)
   .on('mouseout', mouseOut)
 
 // creates the tooltip when a bubble is hovered
@@ -94,23 +94,27 @@ function mouseOver(node) {
               .force('link', linkForce)
               .force('collide', forceCollide)
               .restart()
-    return tooltip.style("visibility", "visible")
-}
-
-function mouseMove() {
-    return tooltip.style("top", (d3.event.pageY - 10) + "px")
-                  .style("left", (d3.event.pageX + 10) + "px")
+    tooltip.style("visibility", "visible")
+           .style("top", (d3.event.pageY - 10) + "px")
+           .style("left", (d3.event.pageX + 10) + "px")
+    return tooltip.style("opacity", "1")
 }
 
 function mouseOut(node) {
     node.isHovering = false
-    d3.select(this).attr("r", node.radius)
+    d3.select(this).attr("r", node.radius);
     resetColors();
     simulation.alphaTarget(.3)
               .force('link', linkForce)
               .force('collide', forceCollide)
               .restart()
-    return tooltip.style("visibility", "hidden")
+
+    tooltip.on('mouseover', function(d) {
+           tooltip.transition().style("opacity", "1");
+         }).on('mouseout', function(d) {
+           tooltip.transition().duration(1000).style("opacity", "0");
+         });
+    return tooltip.transition().duration(1000).style("opacity", "0")
 }
 
 // creating a force between the links
