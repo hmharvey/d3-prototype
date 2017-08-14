@@ -63,7 +63,6 @@ var nodeElements = container.selectAll("circle")
   .attr('r', getRadius)
   .attr('fill', getNodeColor)
   .on('mouseover', mouseOver)
-//   .on('mousemove', mouseMove)
   .on('mouseout', mouseOut)
 
 // creates the tooltip when a bubble is hovered
@@ -112,9 +111,9 @@ function mouseOut(node) {
     tooltip.on('mouseover', function(d) {
            tooltip.transition().style("opacity", "1");
          }).on('mouseout', function(d) {
-           tooltip.transition().duration(1000).style("opacity", "0");
+           tooltip.transition().duration(200).style("opacity", "0");
          });
-    return tooltip.transition().duration(1000).style("opacity", "0")
+    return tooltip.transition().duration(200).style("opacity", "0")
 }
 
 // creating a force between the links
@@ -124,14 +123,6 @@ var linkForce = d3.forceLink()
     .iterations(1)
 
 function getDistance(link) {
-  var sourceRadius = link.source.radius
-  if (link.source.isHovering) {
-      sourceRadius += 10
-  }
-  var targetRadius = link.target.radius
-  if (link.target.isHovering) {
-    targetRadius += 10
-  }
   return link.source.radius + link.target.radius + PERSPECT_LINK
 }
 
@@ -165,13 +156,9 @@ function isSameLine(hoveredCircle, line) {
 function hoverColors(d) {
   d3.selectAll("circle").style("fill-opacity", function(o) {
     return isSameModule(d, o) ? 1 : 0.2;
-    // this.setAttribute('fill-opacity', thisOpacity);
-    // return thisOpacity;
   });
   d3.selectAll("line").style("stroke-opacity", function(o) {
     return isSameLine(d, o) ? 1 : 0.2;
-    // this.setAttribute('stroke-opacity', thisOpacity);
-    // return thisOpacity;
   });
 };
 
