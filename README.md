@@ -7,7 +7,7 @@ This graph shows the overarching topics (green) and specific ideas (blue) within
 ![worldview-index](Prototype-Gifs/Index.gif)
 
 *Sources Graph* <br>
-This graph shows all of the sources used within your tool. The key isn't shown, but each color correlates to a type of source, such as book, talk, podcast, etc. This utility of this graph allows for the beginning of analysis of your sources, separating by type (the process which will also be used to separate sources based on author gender and/or ethnicity) as well as allowing the influence of each source be toggled. In the initial layout, the circles are different sizes based on how many perspectives the source supports. However, you can also change all thee sizes to be the same static size which allows for a slightly different set of analysis.
+This graph shows all of the sources used within your tool. The key isn't shown, but each color correlates to a type of source, such as book, talk, podcast, etc. This utility of this graph allows for the beginning of analysis of your sources, separating by type (the process which will also be used to separate sources based on author gender and/or ethnicity) as well as allowing the influence of each source be toggled. In the initial layout, the circles are different sizes based on how many perspectives the source supports. However, you can also change all the sizes to be the same static size which allows for a slightly different set of analysis.
 ![sources-index](Prototype-Gifs/Sources-Index.gif)
 
 *Dot Plot Graph* <br>
