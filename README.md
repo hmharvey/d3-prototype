@@ -13,5 +13,5 @@ This graph shows all of the sources used within your tool. The key isn't shown, 
 *Dot Plot Graph* <br>
 This graph will be used, without the axes, to show combinations of filters that can't be accomplished with the above Sources Graph. For example, the sources could be lined up to show both gender and ethnicity
 
-![dotplot-index](Prototype-Gifs/Dotplot-Index.png)
+![dot-plot-index](Prototype-Gifs/Dot-Plot-Index.gif)
 
