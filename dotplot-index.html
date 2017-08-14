@@ -8,6 +8,7 @@
     <div id="chart"></div>
     <script>
         // sample data, this will be factored out
+        // this code is largely based on Guillaume Calmettes’s https://bl.ocks.org/gcalmettes/95e3553da26ec90fd0a2890a678f3f69
         var data = [ { id: "Random", kind: "TALK", name: "asdfg", value: 1, },
                      { id: "Random123", kind: "TALK", name: "qwert", value: 1},
                      { id: "Random234", kind: "BOOK", name: "zxcvb", value: 2},
@@ -18,12 +19,12 @@
                      { id: "Random789", kind: "PODCAST", name: "xftyu", value: 2},
                      { id: "Random890", kind: "DOCUMENTARY", name: "bhujm", value: 1}, ]
 
-        // Set the dimensions of the graph
+        // sets the dimensions of the graph
         var margin = { top: 10, right: 30, bottom: 30, left: 30 },
             width = window.innerWidth/2 - margin.left - margin.right,
             height = 480 - margin.top - margin.bottom;
 
-        // Set the ranges
+        // sets the ranges
         var x = d3.scaleLinear()
             .rangeRound([0, width])
             .domain([0, data.length]);
@@ -31,7 +32,7 @@
             .range([height, 0])
             .domain([0, data.length]);
 
-        // Adds the svg canvas
+        // adds the svg canvas
         var svg = d3.select("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
@@ -46,7 +47,7 @@
             .attr("transform", "translate(0," + height + ")")
             .call(d3.axisBottom(x));
 
-        // add x axis
+        // add y axis
         svg.append("g")
             .attr("class", "axis axis--y")
             .attr("transform", "translate(0, 0)")
@@ -117,9 +118,9 @@
                     return tooltip.style("visibility", "hidden")
                 });
 
-                // returns the color of the node based on its kind
-                function getColor(node) {
-                    kind = node.kind;
+                // returns the color of the node d based on its kind
+                function getColor(d) {
+                    kind = d.kind;
                     if (kind === 'BLOG_POST') {
                       return '#ffb68b';
                     } else if (kind === 'LETTER') {
@@ -138,17 +139,20 @@
                       return '#9176fb';
                     }
                   }
-
+                
+                // returns the opacity when a node d is hovered
                 function hoverColors() {
                   dots.style("fill-opacity", function(o) {
                     return o.isHovering ? 1 : 0.2;
                   });
                 };
 
-                function resetColors(d) {
+                // resets the opacities to 1
+                function resetColors() {
                   d3.selectAll("circle").style("fill-opacity", 1);
                 };
 
+                // returns the number value relating to the kind of the node d
                 function splitNum(d) {
                     kind = d.kind;
                     if (kind === 'LETTER') {
